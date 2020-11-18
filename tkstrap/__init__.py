@@ -22,6 +22,10 @@ class style(object):
         """
         ## Button Styles                    ##
         big1 = "big-1.TButton"
+        big2 = "big-2.TButton"
+        big3 = "big-3.TButton"
+        big4 = "big-4.TButton"
+        big5 = "big-5.TButton"
         ## Button Styles                    ##
     """
     For loading styles
@@ -49,13 +53,26 @@ def _button_styles() -> Generator[Tuple[StyleName, Options], None, None]:
     """
     ## Documentation                        ##
     ## big                                  ##
-    yield (
-        style.styles.big1.value,
-        {
-            "height": 10,
-            "width": 50
-        }
-    )
+    yield (style.styles.big1.value, {
+        "height": 50, "width": 25,
+        "font": ("Helvetica", 50)
+    })
+    yield (style.styles.big2.value, {
+        "height": 45, "width": 25,
+        "font": ("Helvetica", 45)
+    })    
+    yield (style.styles.big3.value, {
+        "height": 40, "width": 25,
+        "font": ("Helvetica", 40)
+    })    
+    yield (style.styles.big4.value, {
+        "height": 35, "width": 25,
+        "font": ("Helvetica", 35)
+    })    
+    yield (style.styles.big5.value, {
+        "height": 30, "width": 25,
+        "font": ("Helvetica", 30)
+    })    
     ## big                                  ##
 
 def init(master: Tk) -> style:

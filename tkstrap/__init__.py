@@ -1,118 +1,98 @@
 ### IMPORTS                             ###
-from tkinter.ttk import Style
-from tkinter import Tk  # possible issue
-from typing import Tuple, Generator
+from __future__ import annotations
+from tkinter import Tk, Widget
+from typing import Tuple, Generator, AnyStr, Union
 from enum import Enum
+from dataclasses import dataclass
+from itertools import chain
 ### IMPORTS                             ###
 ### DOCUMENTATION                       ###
+"""
+"""
 ### DOCUMENTATION                       ###
 ### ARBITRARY CONSTANTS                 ###
-Options, StyleName = str, dict
+StandardTkOpts = dict
+StandardTkOptsNames = str
 ### ARBITRARY CONSTANTS                 ###
 ### EXCEPTIONS                          ###
 class StyleError(Exception):
     def __init__(self, provided_style: str) -> None:
         super().__init__(f"Style Not Recognized, {provided_style}")
 ### EXCEPTIONS                          ###
-### STYLES                              ###
-class style(object):
-    class styles(Enum):
-        """
-        Enum holding all styles for tks
-        """
-        ## Button Styles                    ##
-        big1 = "big-1.TButton"
-        big2 = "big-2.TButton"
-        big3 = "big-3.TButton"
-        big4 = "big-4.TButton"
-        big5 = "big-5.TButton"
+### STYLE CLASSES                       ###
+class Styles(Enum):
+    """
+    Holds all the styles for TkStrap
+    """
+    btn = {
+        "height": 1,
+        "width": 25,
+        "font": ("Helvetica", 25),
+        "borderwidth": 0,
+        "relief": "flat"
+    }
 
-        small1 = "small-1.TButton"
-        small2 = "small-2.TButton"
-        small3 = "small-3.TButton"
-        small4 = "small-4.TButton"
-        small5 = "small-5.TButton"
-        ## Button Styles                    ##
+class _Style(object):
     """
-    For loading styles
+    The _Style class is used for creating styles in TkStrap
     """
-    ## Get Style Method                     ##
-    def __call__(self, style_name: str) -> str:
-        ## Hints                            ##
-        style: self.styles
-        ## Hints                            ##
+
+    ## Dunder                               ##
+    def __init__(self, **opts: StandardTkOpts): self.__ops = opts
+    def __repr__(self): return str(self)    # calls the __str__ dunder
+    def __str__(self): return f"{self.__ops}"
+    def __call__(self, arg: AnyStr): return self.__ops if arg == 'dict' else 0
+    ## Dunder                               ##
+    def add(self, **opts: StandardTkOpts) -> None: """
+    Adds the additional options to the current options
+    """; self.__ops |= opts
+
+    def rm(self, *opts: StandardTkOptsNames) -> None:"""
+    Removes the provided options in the 'opts' variable from the
+    current options
+    """; self.__ops = {k:v for k,v in self.__ops.items() if k not in opts}
+
+    def edit(self, **opts: StandardTkOpts) -> None: """
+    Edits the provided options for the current options
+    """; self.add(**opts)
+    
+    def blank_slate(self) -> None: """
+    Clears all options.
+
+    Cannot be undone
+    """; self.__ops.clear()
+
+    def copy(self) -> _Style: """
+    Returns a copy of the instance
+    """; return _Style(self.__ops)
+
+class _Styler(object):
+    __inst = lambda var, cls_ : f"'{type(var)}' is not an instance of {cls_}"
+    @classmethod
+    def style(cls, widget: Widget, style: _Style) -> None:
         """
-        For getting a style
+        Styles the specified widget with the specified style
         """
-        for style in self.styles:
-            if style_name == style.name: return style.value
-        raise StyleError(style_name)
-    ## Get Style Method                     ##
-### STYLES                              ###
+        ## Checks                           ##
+        assert isinstance(*(w := (widget, Widget))), cls.__inst(*w)
+        assert isinstance(*(s := (style, _Style))), cls.__inst(*s)
+        ## Checks                           ##
+        ## Style Widget                     ##
+        widget.config(**style('dict'))
+        ## Style Widget                     ##
+### STYLE CLASSES                       ###
 ### FUNCS                               ###
-def _button_styles() -> Generator[Tuple[StyleName, Options], None, None]:
-    ## Documentation                        ##
-    """
-    Initializes Button Styles
-
-    Not meant for use outside of module
-    """
-    ## Documentation                        ##
-    ## big                                  ##
-    yield (style.styles.big1.value, {
-        "height": 50, "width": 25,
-        "font": ("Helvetica", 50)
-    })
-    yield (style.styles.big2.value, {
-        "height": 45, "width": 25,
-        "font": ("Helvetica", 45)
-    })    
-    yield (style.styles.big3.value, {
-        "height": 40, "width": 25,
-        "font": ("Helvetica", 40)
-    })    
-    yield (style.styles.big4.value, {
-        "height": 35, "width": 25,
-        "font": ("Helvetica", 35)
-    })    
-    yield (style.styles.big5.value, {
-        "height": 30, "width": 25,
-        "font": ("Helvetica", 30)
-    })    
-    ## big                                  ##
-    ## small                                ##
-    yield (style.styles.small1.value, {
-        "height": 10, "width": 20,
-        "font": ("Helvetica", 10)
-    })
-    yield (style.styles.small2.value, {
-        "height": 12, "width": 20,
-        "font": ("Helvetica", 12)
-    })    
-    yield (style.styles.small3.value, {
-        "height": 14, "width": 20,
-        "font": ("Helvetica", 14)
-    })    
-    yield (style.styles.small4.value, {
-        "height": 16, "width": 20,
-        "font": ("Helvetica", 16)
-    })    
-    yield (style.styles.small5.value, {
-        "height": 18, "width": 20,
-        "font": ("Helvetica", 18)
-    })    
-    ## small                                ##
-
-def init(master: Tk) -> style:
-    """
-    Initializes Tkstrap
-    """
-    base = Style(master=master)
-    config: Tuple[StyleName, Options]
-    for config in _button_styles(): base.configure(config[0], **config[1])
-    return style()
+def get(style_name: AnyStr) -> _Style:
+    ## Hints                                ##
+    style: Styles
+    ## Hints                                ##
+    for style in Styles:
+        if style.name == style_name: return _Style(**style.value)
+    raise StyleError(style_name)
+def style(widget: Widget, style: _Style) -> None:
+    _Styler.style(widget, style)
 ### FUNCS                               ###
 ### CLEANUP                             ###
-del StyleName
-del Options
+del StandardTkOpts
+del StandardTkOptsNames
 ### CLEANUP                             ###

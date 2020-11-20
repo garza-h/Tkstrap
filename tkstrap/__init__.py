@@ -1,7 +1,7 @@
 ### IMPORTS                             ###
 from __future__ import annotations
-from tkinter import Tk, Widget
-from typing import Tuple, Generator, AnyStr, Union
+from tkinter import Tk, Widget, Button
+from typing import Tuple, Generator, AnyStr, Union, Callable
 from enum import Enum
 from dataclasses import dataclass
 from itertools import chain
@@ -19,17 +19,24 @@ class StyleError(Exception):
     def __init__(self, provided_style: str) -> None:
         super().__init__(f"Style Not Recognized, {provided_style}")
 ### EXCEPTIONS                          ###
+### UTILITY                             ###
+def _bind(w: Widget, bind: str,  action: Callable): w.bind(bind, action)
+def bind_enter(w: Widget, action: Callable): _bind(w, '<Enter>', action)
+def bind_leave(w: Widget, action: Callable): _bind(w, '<Leave>', action)
+change_bg = lambda w, bg: w.config(background=bg)
+### UTILITY                             ###
 ### STYLE CLASSES                       ###
 class Styles(Enum):
     """
     Holds all the styles for TkStrap
     """
     btn = {
-        "height": 1,
-        "width": 25,
-        "font": ("Helvetica", 25),
+        "height": 1, "width": 25,   # dimensions
+        "foreground": "#212529",
+        "relief": "flat",
+        "font": ("Helvetica", 16),
         "borderwidth": 0,
-        "relief": "flat"
+        "activebackground": "azure"
     }
 
 class _Style(object):
@@ -38,7 +45,9 @@ class _Style(object):
     """
 
     ## Dunder                               ##
-    def __init__(self, **opts: StandardTkOpts): self.__ops = opts
+    def __init__(self, s_name: str, **opts: StandardTkOpts):
+        self.s_name = s_name
+        self.__ops = opts
     def __repr__(self): return str(self)    # calls the __str__ dunder
     def __str__(self): return f"{self.__ops}"
     def __call__(self, arg: AnyStr): return self.__ops if arg == 'dict' else 0
@@ -64,7 +73,7 @@ class _Style(object):
 
     def copy(self) -> _Style: """
     Returns a copy of the instance
-    """; return _Style(self.__ops)
+    """; return _Style(self.s_name, **self.__ops)
 
 class _Styler(object):
     __inst = lambda var, cls_ : f"'{type(var)}' is not an instance of {cls_}"
@@ -87,10 +96,23 @@ def get(style_name: AnyStr) -> _Style:
     style: Styles
     ## Hints                                ##
     for style in Styles:
-        if style.name == style_name: return _Style(**style.value)
+        if style.name == style_name: return _Style(
+            style_name,
+            **style.value    # the opts
+        )
     raise StyleError(style_name)
-def style(widget: Widget, style: _Style) -> None:
-    _Styler.style(widget, style)
+
+def style(w: Widget, style: _Style) -> None:
+    ## Hints                                ##
+    origin: str
+    ## Hints                                ##
+    _Styler.style(w, style)
+    if style.s_name == Styles.btn.name:
+        origin = w.cget("background")   # get origin
+        
+        # bind
+        bind_enter(w, lambda *_: change_bg(w, 'azure'))
+        bind_leave(w, lambda *_: change_bg(w, origin))
 ### FUNCS                               ###
 ### CLEANUP                             ###
 del StandardTkOpts
